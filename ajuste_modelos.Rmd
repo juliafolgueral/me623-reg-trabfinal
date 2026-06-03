@@ -112,3 +112,251 @@ car::vif(mod3)
 \textbf{Modelo 3:} Ajustado sem a variável \textit{density}, visando reduzir a multicolinearidade. Houve pequena perda de ajuste (\(R^2_{aj}=0{,}2896\)), mas os valores de VIF diminuíram consideravelmente, tornando o modelo mais adequado para interpretação dos coeficientes.
 
 Os resultados indicam que maiores valores de \textit{alcohol}, \textit{sulphates} e \textit{residual.sugar} estão associados a maiores níveis de qualidade, enquanto maiores valores de \textit{volatile.acidity}, \textit{chlorides} e \textit{total.sulfur.dioxide} estão associados a menores níveis de qualidade. As variáveis \textit{fixed.acidity} e \textit{pH} não apresentaram significância estatística no Modelo 3.
+
+
+#gustavo
+
+# Modelo 04: Modelo com Termo Quadrático (Efeito Não-Linear)
+# Vamos testar se o excesso de Dióxido de Enxofre Total prejudica o vinho após certo ponto (curva em U invertido)
+
+```{r}
+mod4 <- lm(quality ~ fixed.acidity + volatile.acidity + residual.sugar + chlorides +
+             free.sulfur.dioxide + total.sulfur.dioxide + I(total.sulfur.dioxide^2) + 
+             pH + sulphates + alcohol + type, data = dados)
+
+summary(mod4)
+
+```
+
+```{r}
+car::vif(mod4)
+```
+
+
+#Modelo 05: Modelo com Interação Química
+# testar se o efeito do açúcar residual na qualidade depende do teor alcoólico do vinho
+
+```{r}
+mod5 <- lm(quality ~ fixed.acidity + volatile.acidity + residual.sugar * alcohol + 
+             chlorides + free.sulfur.dioxide + total.sulfur.dioxide + 
+             pH + sulphates + type, data = dados)
+
+summary(mod5)
+```
+
+```{r}
+car::vif(mod5)
+```
+
+
+###interpretacoes Modelo 4#####
+
+
+#teste f
+Interpretação do Teste F:$H_0$: $\beta_1 = \beta_2 = \dots = \beta_{11} = 0$$H_1$: Pelo menos um $\beta$ é diferente de zero.Análise: O p-valor estatístico é $< 2.2 \times 10^{-16}$ (altamente significativo). 
+Portanto, rejeitamos $H_0$. Existe evidência estatística robusta de que o conjunto de variáveis explicativas (incluindo o termo quadrático) está associado à qualidade do vinho.
+
+#R quadrado ajustado:
+Cerca de 29,32% da variabilidade da qualidade do vinho é explicada por este modelo. É um valor muito próximo ao do Modelo 1, sugerindo que a capacidade preditiva geral se manteve estável, mas a física interna do modelo mudou.
+
+#Variáveis não significativas:
+Diferente do Modelo 1, aqui temos duas variáveis que perderam a significância prática após o controle das demais:
+
+- fixed.acidity (p-valor = 0.941)
+
+- pH (p-valor = 0.106)
+
+Ambas não adicionam informação relevante para prever a qualidade quando analisadas em conjunto com as outras variáveis deste modelo.
+
+#O Efeito Quadrático do Dióxido de Enxofre
+
+Olhando para as variáveis (total.sulfur.dioxide) e (I(total.sulfur.dioxide^2)), ambas foram altamente significativas (p-valores de 0.003 e $6.29 \times 10^{-9}$, respectivamente).Como o termo linear é positivo e o termo quadrático é negativo ($\beta = -1.541 \times 10^{-5}$), isso prova a existência de uma parábola com a concavidade voltada para baixo (formato de U invertido).Interpretação Química: O dióxido de enxofre total atua positivamente melhorando a qualidade do vinho até certo limite (propriedade conservante). No entanto, após atingir um "ponto ideal", o excesso dessa substância começa a prejudicar a nota do vinho (provavelmente devido ao aroma forte de enxofre e sabor desagradável). Vocês conseguiram capturar um efeito não-linear usando regressão linear múltipla!
+
+#Interpretação dos demais coeficientes principais:
+Álcool (alcohol): coef = 0.3338 e p-valor $< 2 \times 10^{-16}$. Mantidas as demais variáveis fixas, o aumento de 1 unidade percentual no teor alcoólico está associado a um aumento médio de 0.3338 pontos na nota do vinho. (Teve o maior valor absoluto de $t$, sendo o preditor mais forte).
+
+Acidez Volátil (volatile.acidity): coef = -1.516. Mantidas as demais constantes, o aumento de 1 unidade na acidez volátil (vinagre) reduz a qualidade média em 1.51 pontos.
+
+Sulfatos (sulphates): coef = 0.582. Mantidas as demais variáveis constantes, uma maior concentração de sulfatos está associada a um aumento na nota do vinho.
+
+Cloretos (chlorides): coef = -1.113. Teve forte impacto negativo; quanto mais salino/cloreto o vinho tiver, menor tende a ser sua nota.
+
+#Comparação entre vinho branco e tinto (typeWhite)
+
+Mantidas as demais características químicas constantes, os vinhos brancos apresentam uma nota média aproximadamente 0.24 pontos menor que os vinhos tintos ($p\text{-valor} = 2.04 \times 10^{-6}$). O tipo do vinho continua sendo um fator de impacto isolado.
+
+#Intercepto
+
+Possui o valor de 2.088, mas não apresenta interpretação química ou prática isolada (um vinho com todas as propriedades zeradas não existe), servindo apenas como ponto de partida matemático da reta de regressão.
+
+#Conclusão para o Modelo 04:
+
+O Modelo 04 trouxe uma sofisticação importante ao relatório ao comprovar que a relação química de conservantes como o total.sulfur.dioxide não é puramente linear, possuindo um ponto ótimo de saturação. O modelo mantém o álcool e a acidez volátil como os fatores de maior peso para determinar a nota do vinho, enquanto variáveis como pH e acidez fixa se mostraram dispensáveis nesta configuração.
+
+
+
+####Interpretacoes modelo 5:###
+
+#Interpretação do Teste F:
+
+$H_0$: $\beta_1 = \beta_2 = \dots = \beta_{11} = 0$$H_1$: Pelo menos um $\beta$ é diferente de zero.Análise: O p-valor estatístico obtido é $< 2.2 \times 10^{-16}$ (altamente significativo).
+Rejeitamos $H_0$, o que comprova que o conjunto das variáveis explicativas, incluindo o termo de interação, possui associação linear significativa com a qualidade do vinho.
+
+
+#R quadrado ajustado:
+Cerca de 28,98% da variabilidade da qualidade é explicada pelas variáveis presentes neste modelo. Ele apresenta um desempenho ligeiramente inferior ao Modelo 4 ($29,32\%$), mas ainda bastante próximo à linha de base geral dos dados.
+
+
+#Variáveis não significativas:
+Assim como no modelo anterior, após o controle das demais variáveis físico-químicas, duas características perderam completamente o efeito direto sobre a nota:
+
+- fixed.acidity (p-valor = 0.598)
+
+- pH (p-valor = 0.138)
+
+Estas duas variáveis não adicionam informação relevante para explicar a qualidade nesta configuração.
+
+
+#Análise do Termo de Interação (residual.sugar:alcohol)
+
+Neste modelo, incluímos a multiplicação entre o açúcar e o álcool para testar se o efeito de uma variável depende do nível da outra.O p-valor da interação foi de 0.0672. Ao nível de significância padrão de 5% ($\alpha = 0.05$), este termo não é estatisticamente significativo (embora mostre uma leve tendência marginal ao nível de 10%).
+
+Interpretação Prática: Como a interação não atingiu a significância estatística ideal, não podemos afirmar com segurança que o impacto do açúcar residual na qualidade mude dependendo de quão alcoólico o vinho é. O açúcar e o álcool agem de forma majoritariamente independente sobre a nota.
+
+#Interpretação dos coeficientes principais (Efeitos Principais):
+
+Como há um termo de interação no modelo, a interpretação dos coeficientes das variáveis envolvidas muda ligeiramente (eles representam o efeito quando a outra variável é igual a zero):
+
+Álcool (alcohol): coef = 0.3510 e p-valor $< 2 \times 10^{-16}$. Quando o açúcar residual é zero, o aumento de 1 unidade percentual de álcool está associado a um aumento médio de 0.35 pontos na qualidade do vinho. Continua sendo o preditor mais robusto e dominante do banco de dados.
+
+Acor Residual (residual.sugar): coef = 0.0568 e p-valor = 0.0024. Quando o teor alcoólico é zero (teórico), o aumento de açúcar tem um pequeno efeito positivo na nota.
+
+Acidez Volátil (volatile.acidity): coef = -1.5143 e p-valor $< 2 \times 10^{-16}$. Mantidas as demais constantes, o aumento de 1 unidade na acidez volátil (vinagre) penaliza a nota média do vinho em 1.51 pontos.Cloretos (chlorides): coef = -1.037. Mantidas as demais constantes, a presença de cloretos diminui a qualidade média em aproximadamente 1.03 pontos.
+
+Sulfatos (sulphates): coef = 0.5707. Exerce um forte impacto positivo na nota final, mantendo a consistência vista nos modelos anteriores.
+
+#Comparação entre vinho branco e tinto (typeWhite)
+
+Mantidas as demais características físico-químicas constantes, os vinhos brancos apresentam uma nota média aproximadamente 0.14 pontos menor que os vinhos tintos ($p\text{-valor} = 0.00329$). O tipo do vinho ainda é estatisticamente significativo, mas o tamanho do seu efeito diminuiu se comparado ao Modelo 1.
+
+#Intercepto
+
+Possui o valor de 2.1234, servindo apenas como a constante matemática que posiciona a linha de regressão no gráfico, sem uma interpretação prática realista individual.
+
+#Conclusão para o Modelo 05:
+
+Embora a criação de termos de interação seja uma técnica avançada para capturar dinâmicas complexas, o Modelo 05 revelou que a relação conjunta entre residual.sugar e alcohol não possui relevância estatística clara para determinar a qualidade do vinho. Diante disso, o princípio da parcimônia estatística sugere que não vale a pena manter essa interação no modelo final, preferindo-se estruturas onde os efeitos químicos sejam modelados de forma separada ou não-linear (como o efeito quadrático do enxofre no Modelo 4).
+
+
+-------------------------------------------------------------------------
+SELEÇÃO AUTOMÁTICA DE MODELOS (Mecanismos de Seleção)
+-------------------------------------------------------------------------
+
+
+#Para os métodos automáticos, definimos o modelo nulo (só intercepto) e o modelo cheio.
+#Usamos como limite "cheio" o modelo sem a densidade (evitando a multicolinearidade que detectamos ).
+
+```{r}
+mod_nulo <- lm(quality ~ 1, data = dados)
+mod_cheio <- lm(quality ~ fixed.acidity + volatile.acidity + residual.sugar + chlorides +
+                  free.sulfur.dioxide + total.sulfur.dioxide + pH + sulphates +
+                  alcohol + type, data = dados)
+```
+
+#1. Backward Elimination (Eliminação para Trás)
+#Começa com todas as variáveis e vai retirando com base no AIC
+
+```{r}
+mod_backward <- step(mod_cheio, direction = "backward", trace = FALSE)
+summary(mod_backward)
+```
+
+#2. Forward Selection (Seleção para Frente)
+#Começa do nulo e vai adicionando as melhores variáveis uma a uma
+
+```{r}
+mod_forward <- step(mod_nulo, scope = list(lower = mod_nulo, upper = mod_cheio), 
+                    direction = "forward", trace = FALSE)
+summary(mod_forward)
+```
+
+#3. Stepwise Regression (Seleção em Ambas as Direções)
+
+```{r}
+mod_stepwise <- step(mod_nulo, scope = list(lower = mod_nulo, upper = mod_cheio), 
+                     direction = "both", trace = FALSE)
+summary(mod_stepwise)
+```
+
+
+
+-------------------------------------------------------------------------
+COMPARAÇÃO DOS MODELOS (Métricas de Decisão)
+-------------------------------------------------------------------------
+
+#Função para calcular o RMSE, R quadrado ajustado, AIC e BIC
+
+```{r}
+calcula_rmse <- function(modelo) {
+  sqrt(mean(residuals(modelo)^2))
+}
+
+# Criando a tabela comparativa automatizada
+tabela_comparativa <- data.frame(
+  Modelo = c("Mod 1 (Todas)", "Mod 2 (Sem Cítrico)", "Mod 3 (Sem Densidade)", 
+             "Mod 4 (Quadrático)", "Mod 5 (Interação)", 
+             "Mod Auto (Backward)", "Mod Auto (Forward)", "Mod Auto (Stepwise)"),
+  
+  R2_Ajustado = c(summary(mod1)$adj.r.squared, summary(mod2)$adj.r.squared, 
+                  summary(mod3)$adj.r.squared, summary(mod4)$adj.r.squared, 
+                  summary(mod5)$adj.r.squared, summary(mod_backward)$adj.r.squared, 
+                  summary(mod_forward)$adj.r.squared, summary(mod_stepwise)$adj.r.squared),
+  
+  AIC = c(AIC(mod1), AIC(mod2), AIC(mod3), AIC(mod4), AIC(mod5), 
+          AIC(mod_backward), AIC(mod_forward), AIC(mod_stepwise)),
+  
+  BIC = c(BIC(mod1), BIC(mod2), BIC(mod3), BIC(mod4), BIC(mod5), 
+          BIC(mod_backward), BIC(mod_forward), BIC(mod_stepwise)),
+  
+  RMSE = c(calcula_rmse(mod1), calcula_rmse(mod2), calcula_rmse(mod3), 
+           calcula_rmse(mod4), calcula_rmse(mod5), calcula_rmse(mod_backward), 
+           calcula_rmse(mod_forward), calcula_rmse(mod_stepwise))
+)
+
+# Arredondando os valores para 4 casas decimais para ficar bonito no relatório
+tabela_comparativa[, 2:5] <- round(tabela_comparativa[, 2:5], 4)
+
+# Exibir a tabela
+knitr::kable(tabela_comparativa, caption = "Comparação dos Modelos de Regressão")
+```
+
+
+
+#1. Análise dos Critérios (Métrica por Métrica)1.
+O vencedor em Poder de Explicação: Modelo 2 (Sem Cítrico)Se olharmos puramente para a capacidade de ajuste, o Modelo 2 é o que se sai melhor:
+
+Apresenta o maior $R^2$ Ajustado (0.2953) e o menor AIC (14417.03).
+
+Porem o Modelo 2 inclui a variável density, que possui um VIF altíssimo. Escolher este modelo significa aceitar um relatório com sérios problemas de multicolinearidade, o que pode invalidar interpretação dos coeficientes.
+
+
+#2. A Validação dos Algoritmos: Modelos Automáticos (Backward, Forward, Stepwise)
+
+Reparem em algo fantástico na tabela: os três métodos automáticos chegaram exatamente ao mesmo modelo!
+
+Todos cravaram $R^2 \text{ Ajustado} = 0.2896$, $\text{AIC} = 14466.73$ e $\text{RMSE} = 0.7354$.
+O sumário desses modelos automáticos no R, temos que o computador escolheu tirar a densidade e o ácido cítrico, gerando uma combinação muito parecida com o Modelo 3.
+
+#3. O Vencedor pelo Princípio da Parcimônia: Os Modelos Automáticos
+O critério BIC é o mais rigoroso de todos para penalizar modelos com variáveis demais ou complexas demais.
+
+O menor BIC da tabela inteira pertence aos modelos automáticos (14541.30).
+
+Isso significa que, matematicamente, eles encontraram o melhor equilíbrio possível: removeram o que era irrelevante e mantiveram o erro baixo.
+
+#4 O Veredito: Qual modelo escolher para o relatório?
+
+Sendo assim uma opcao do Modelo Automático (Stepwise/Backward) como o Melhor Modelo Final.
+
+#Justificativa :
+Embora os Modelos 1 e 2 apresentem um $R^2$ ligeiramente superior ($\approx 29,5\%$), eles sofrem com severa multicolinearidade devido à presença da variável density (VIF elevado), o que distorce a interpretação dos coeficientes químicos.Ao analisarmos os critérios de informação, os modelos de seleção automática (Backward, Forward e Stepwise) convergiram para a mesma estrutura simplificada. Este modelo foi o que apresentou o menor valor de BIC (14541.30) entre todos os testados. Pelo princípio da parcimônia, ele é o modelo ideal, pois remove as variáveis redundantes (reduzindo a inflação da variância), mantém o erro médio de previsão baixo ($\text{RMSE} = 0.7354$ pontos na escala da nota) e oferece a interpretação química mais segura e robusta para o negócio.
