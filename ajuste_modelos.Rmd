@@ -1,0 +1,114 @@
+---
+title: "ajuste_modelos"
+output:
+  pdf_document: default
+  html_document: default
+date: "2026-06-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ler o banco de dados
+
+```{r}
+url <- "https://raw.githubusercontent.com/juliafolgueral/me623-reg-trabfinal/main/dados_vinho.csv"
+
+dados <- read.csv(url)
+```
+
+```{r}
+str(dados) # verificar tipos de variaveis
+
+dados$type <- as.factor(dados$type) # transformar tipo em fator
+```
+
+# Modelo 01 - Com todas as variáveis
+
+```{r}
+mod1 <- lm(quality ~ ., data = dados)
+
+summary(mod1)
+```
+
+## Interpretação do Teste F:
+
+H0: beta1 = beta2 = ... = beta12 = 0
+H1: pelo menos um beta é diferente de zero
+
+p- valor < 0.05, logo, rejeitamos H0. Então existe evidência de que pelo menos uma variável físico-química está associdada à qualidade do vinho.
+
+## R quadrado:
+Cerca de 30% da variabilidade da qualidade é explicada pelas variáveis do banco.
+
+## Variáveis não significativas:
+Olhando os p-valores, apenas a variável citric.acid (p-valor = 0.4) não é significativa. 
+Depois de controlar pelas demais variáveis, o ácido cítrico não adiciona informação relevante para explicar a qualidade.
+
+## Variáveis com maior associação:
+Olhando os valores absolutos da estatística observada t, as variáveis mais fortemente associadas à qualidade são: 
+- volatilite.acidicity
+- alcohol
+- residual.sugar
+- sulphates
+
+## Interpretação dos coeficientes:
+- Alcool: coef = 0.2227 e p-valor << 0.05
+Mantida as demais variáveis fixas, um aumento de 1 unidade percentual de álcool está associado a um aumento médio de 0.2227 pontos na nota do vinho.
+
+- Acidez volatil: coef = - 1.492
+Mantidas as demais variáveis constantes, um aumento de 1 unidade na acidez volátil reduz a qualidade em média em 1.49.
+
+- Sulfatos: coef = 0.722
+Mantidas as demais variáveis constantes, maior concentração de sulfatos está associada a maior qualidade.
+
+- Cloretos: coef = -0.757
+Mantidas as demais variaveis constantes, cloretos tendem a diminuir a qualidade.
+
+## Comparação entre vinho branco e tinto
+Mantidas as demais variáveis constantes, vinhos brancos apresentam nota média aproximadamente 0.36 pontos menor que vinhos tintos, com p-valor altamente significativo (2.06e^-10), sugerindo que o tipo do vinho tem efeito próprio mesmo após controlar pelas características químicas.
+
+## Intercepto
+Não possui interpretação clara, serve apenas para posicionar a reta.
+
+## Conclusão para o modelo 01: 
+A qualidade do vinho apresenta associação significativa com praticamente todas as características físico-químicas analisadas. Os fatores mais fortemente relacionados à qualidade são álcool (efeito positivo), acidez volátil (efeito negativo), açúcar residual (efeito positivo) e sulfatos (efeito positivo). O ácido cítrico não apresentou efeito significativo após o ajuste pelas demais variáveis. Além disso, mesmo controlando pelas características químicas, vinhos brancos tendem a apresentar qualidade média inferior à dos tintos.
+
+# Modelo 02: Sem acido cítrico
+Como o acido cítrico não foi significativo, vamos retirá-lo do modelo e verificar se perdemos capacidade explicativa ao retirar uma variável aparentemente irrelevante
+
+```{r}
+mod2 <- lm(quality ~ fixed.acidity + volatile.acidity + residual.sugar + chlorides +
+           free.sulfur.dioxide + total.sulfur.dioxide + density + pH + sulphates + 
+           alcohol + type, data = dados)
+
+summary(mod2)
+```
+
+Os resultados encontrados no modelo 2 são muito próximos dos encontrados no modelo 01. Isso indica que 'acido citrico' de fato não tem grandes influências no modelo. Nesse caso, escolheríamos usar o modelo mais simples e excluímos essa variável do modelo. 
+
+```{r}
+car::vif(mod2)
+```
+
+# Modelo 03: Modelo sem densidade
+Tiramos a densidade, pois apesar de ser significativo, tem um vif alto, indicando uma possível multicolinearidade.
+
+```{r}
+mod3 <- lm( quality ~ fixed.acidity + volatile.acidity + residual.sugar + chlorides +
+            free.sulfur.dioxide + total.sulfur.dioxide + pH + sulphates +
+            alcohol + type, data = dados)
+
+summary(mod3)
+```
+
+```{r}
+car::vif(mod3)
+```
+
+\textbf{Modelo 2:} Obtido por seleção de variáveis. Apresentou o melhor desempenho preditivo entre os modelos ajustados, com \(R^2_{aj}=0{,}2953\). Entretanto, foram observados indícios de multicolinearidade, principalmente envolvendo as variáveis \textit{density}, \textit{residual.sugar} e \textit{alcohol}.
+
+\textbf{Modelo 3:} Ajustado sem a variável \textit{density}, visando reduzir a multicolinearidade. Houve pequena perda de ajuste (\(R^2_{aj}=0{,}2896\)), mas os valores de VIF diminuíram consideravelmente, tornando o modelo mais adequado para interpretação dos coeficientes.
+
+Os resultados indicam que maiores valores de \textit{alcohol}, \textit{sulphates} e \textit{residual.sugar} estão associados a maiores níveis de qualidade, enquanto maiores valores de \textit{volatile.acidity}, \textit{chlorides} e \textit{total.sulfur.dioxide} estão associados a menores níveis de qualidade. As variáveis \textit{fixed.acidity} e \textit{pH} não apresentaram significância estatística no Modelo 3.
