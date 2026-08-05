@@ -1,6 +1,6 @@
 ---
 title: "Estudo da relação entre propriedades físico-químicas e qualidade de vinhos"
-author:
+author: 
   - Gustavo Coimbra de Souza Teixeira RA 237599
   - Julia Folgueral RA 277178
   - Luiz Fernando de Oliveira Pereira RA 267356
